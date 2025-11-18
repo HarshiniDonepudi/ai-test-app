@@ -4,7 +4,11 @@
   "outputDirectory": "client/build",
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/analyze",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/health",
       "destination": "/api/index"
     }
   ]
