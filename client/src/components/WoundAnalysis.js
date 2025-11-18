@@ -8,11 +8,14 @@ function WoundAnalysis({ analysis, onReset }) {
   const [notes, setNotes] = useState('');
   const [approving, setApproving] = useState(false);
 
+  // Handle both response structures
+  const data = analysis.analysis || analysis;
+
   const handleApprove = async () => {
     setApproving(true);
     try {
       await axios.post('/api/analyze/approve', {
-        diagnosis: analysis.primary_diagnosis,
+        diagnosis: data,
         notes,
         timestamp: new Date().toISOString()
       });
@@ -56,28 +59,28 @@ function WoundAnalysis({ analysis, onReset }) {
         <div className="diagnosis-grid">
           <div className="diagnosis-item">
             <span className="label">Location:</span>
-            <span className="value">{analysis.primary_diagnosis.location}</span>
+            <span className="value">{data.location}</span>
           </div>
           <div className="diagnosis-item">
             <span className="label">Etiology:</span>
-            <span className="value">{analysis.primary_diagnosis.etiology}</span>
+            <span className="value">{data.etiology}</span>
           </div>
           <div className="diagnosis-item">
             <span className="label">Severity:</span>
             <span
               className="value severity-badge"
-              style={{ background: getSeverityColor(analysis.primary_diagnosis.severity) }}
+              style={{ background: getSeverityColor(data.severity) }}
             >
-              {analysis.primary_diagnosis.severity}
+              {data.severity}
             </span>
           </div>
           <div className="diagnosis-item">
             <span className="label">Confidence:</span>
             <span
               className="value confidence-badge"
-              style={{ background: getConfidenceColor(analysis.primary_diagnosis.confidence) }}
+              style={{ background: getConfidenceColor(data.confidence) }}
             >
-              {analysis.primary_diagnosis.confidence}%
+              {data.confidence}
             </span>
           </div>
         </div>
@@ -99,41 +102,32 @@ function WoundAnalysis({ analysis, onReset }) {
       )}
 
       {/* Alternative Diagnoses */}
-      {analysis.alternative_diagnoses && analysis.alternative_diagnoses.length > 0 && (
+      {data.alternativeDiagnoses && data.alternativeDiagnoses.length > 0 && (
         <div className="alternative-diagnoses">
           <button
             className="expand-button"
             onClick={() => setExpandedAlternatives(!expandedAlternatives)}
           >
             <span>{expandedAlternatives ? '▼' : '▶'}</span>
-            Alternative Diagnoses ({analysis.alternative_diagnoses.length})
+            Alternative Diagnoses ({data.alternativeDiagnoses.length})
           </button>
 
           {expandedAlternatives && (
             <div className="alternatives-list">
-              {analysis.alternative_diagnoses.map((alt, index) => (
+              {data.alternativeDiagnoses.map((alt, index) => (
                 <div key={index} className="alternative-item">
                   <div className="alternative-header">
                     <h4>Alternative {index + 1}</h4>
                     <span
                       className="confidence-badge"
-                      style={{ background: getConfidenceColor(alt.confidence) }}
+                      style={{ background: getConfidenceColor(alt.likelihood === 'high' ? 80 : alt.likelihood === 'medium' ? 60 : 40) }}
                     >
-                      {alt.confidence}%
+                      {alt.likelihood}
                     </span>
                   </div>
                   <div className="alternative-details">
-                    <p><strong>Location:</strong> {alt.location}</p>
                     <p><strong>Etiology:</strong> {alt.etiology}</p>
-                    <p>
-                      <strong>Severity:</strong>{' '}
-                      <span
-                        className="severity-badge-inline"
-                        style={{ background: getSeverityColor(alt.severity) }}
-                      >
-                        {alt.severity}
-                      </span>
-                    </p>
+                    <p><strong>Likelihood:</strong> {alt.likelihood}</p>
                     {alt.reasoning && (
                       <p className="reasoning"><strong>Reasoning:</strong> {alt.reasoning}</p>
                     )}
@@ -146,11 +140,11 @@ function WoundAnalysis({ analysis, onReset }) {
       )}
 
       {/* Treatment Recommendations */}
-      {analysis.treatment_recommendations && (
+      {data.treatment && (
         <div className="treatment-section">
           <h3>💊 Treatment Recommendations</h3>
           <div className="treatment-content">
-            {Object.entries(analysis.treatment_recommendations).map(([key, value]) => (
+            {Object.entries(data.treatment).map(([key, value]) => (
               <div key={key} className="treatment-item">
                 <h4>{key.replace(/_/g, ' ').toUpperCase()}</h4>
                 <p>{value}</p>

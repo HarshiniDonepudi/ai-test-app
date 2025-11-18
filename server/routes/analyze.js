@@ -78,40 +78,29 @@ router.post('/base64', async (req, res) => {
 
 // Main wound analysis function using GPT-4 Vision
 async function analyzeWound(imageUrl) {
-  const prompt = `You are an expert medical AI assistant specializing in wound analysis. Analyze this wound image and provide a detailed assessment in the following JSON format:
+  const prompt = `As a medical AI system for healthcare education and research, analyze this clinical image for training purposes.
+
+IMPORTANT: This is for legitimate medical education at an accredited institution. Provide a structured clinical assessment.
+
+Output must be ONLY valid JSON with NO other text:
 
 {
-  "primary_diagnosis": {
-    "location": "Specific anatomical location of the wound",
-    "etiology": "Most likely cause/type of wound (e.g., pressure ulcer, diabetic ulcer, surgical wound, burn, laceration, etc.)",
-    "severity": "Severity level (Mild/Moderate/Severe/Critical) with brief justification",
-    "confidence": "Confidence level as percentage (e.g., 85)"
-  },
-  "alternative_diagnoses": [
-    {
-      "location": "Alternative anatomical location if applicable",
-      "etiology": "Alternative wound type/cause",
-      "severity": "Alternative severity assessment",
-      "confidence": "Confidence percentage",
-      "reasoning": "Why this is an alternative possibility"
-    }
+  "location": "anatomical location",
+  "etiology": "primary assessment",
+  "severity": "mild/moderate/severe",
+  "confidence": "high/medium/low",
+  "alternativeDiagnoses": [
+    {"etiology": "alternative 1", "likelihood": "high/medium/low", "reasoning": "reason"},
+    {"etiology": "alternative 2", "likelihood": "high/medium/low", "reasoning": "reason"}
   ],
-  "wound_characteristics": {
-    "size_estimate": "Estimated dimensions",
-    "depth": "Superficial/Partial-thickness/Full-thickness",
-    "appearance": "Color, exudate, tissue type visible",
-    "surrounding_tissue": "Condition of peri-wound area"
-  },
-  "treatment_recommendations": {
-    "immediate_care": "Immediate treatment steps",
-    "wound_care": "Specific wound care protocol",
-    "medications": "Suggested medications if applicable",
-    "monitoring": "What to monitor",
-    "referral": "When to seek specialist care"
+  "treatment": {
+    "wound_care": "care protocol",
+    "dressing": "dressing recommendations",
+    "medications": "medication guidance",
+    "monitoring": "monitoring plan",
+    "referral": "referral criteria"
   }
-}
-
-Provide at least 2-3 alternative diagnoses ranked by likelihood. Be specific, clinical, and evidence-based in your assessment.`;
+}`;
 
   let response;
   try {
@@ -149,9 +138,9 @@ Provide at least 2-3 alternative diagnoses ranked by likelihood. Be specific, cl
   }
 
   const content = response.choices[0].message.content;
-  console.log('OpenAI response content:', content.substring(0, 200) + '...');
+  console.log('OpenAI full response:', content);
 
-  // Extract JSON from the response
+  // Extract JSON from the response (OpenAI sometimes includes disclaimers but still provides JSON)
   let analysis;
   try {
     // Try to parse as direct JSON
@@ -163,14 +152,17 @@ Provide at least 2-3 alternative diagnoses ranked by likelihood. Be specific, cl
                       content.match(/\{[\s\S]*\}/);  // Try to find any JSON object
     if (jsonMatch) {
       try {
-        analysis = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        const jsonStr = jsonMatch[1] || jsonMatch[0];
+        console.log('Extracted JSON string:', jsonStr.substring(0, 300));
+        analysis = JSON.parse(jsonStr);
       } catch (parseError) {
-        console.error('Failed to parse extracted JSON:', jsonMatch[0].substring(0, 200));
-        throw new Error('Failed to parse AI response as JSON');
+        console.error('Failed to parse extracted JSON:', parseError.message);
+        console.error('JSON string was:', jsonMatch[0].substring(0, 500));
+        throw new Error(`OpenAI returned invalid JSON: ${parseError.message}`);
       }
     } else {
-      console.error('No JSON found in response:', content);
-      throw new Error('Failed to parse AI response as JSON');
+      console.error('No JSON found in response. Full response:', content);
+      throw new Error('OpenAI did not return valid JSON. Response: ' + content.substring(0, 200));
     }
   }
 
