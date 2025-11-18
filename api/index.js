@@ -139,48 +139,42 @@ async function analyzeWound(imageUrl) {
         {
           role: "system",
           content:
-            "You are an AI assistant that analyzes images and returns structured, NON-DIAGNOSTIC, " +
-            "purely educational observations. You do NOT provide medical advice, diagnosis, or " +
-            "treatment recommendations. You only describe what is visible and offer high-level, " +
-            "generic considerations. Always respond with valid JSON only."
+            "You provide brief, simple observations about images. Use minimal words. " +
+            "Keep everything concise - 1-3 words for most fields. " +
+            "Always return valid JSON only."
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this image and provide a structured, non-diagnostic observation.
-Return ONLY valid JSON with this structure:
+              text: `Describe what you see. Return ONLY valid JSON:
 
 {
-  "location": "describe the visual location or area shown",
-  "primaryObservation": "primary visual observation (descriptive, non-diagnostic)",
+  "location": "single word (e.g., 'forearm', 'hand', 'leg')",
+  "primaryObservation": "2-3 words max (e.g., 'insect bite', 'skin rash', 'minor scrape')",
   "severity": "mild/moderate/severe",
   "confidence": "high/medium/low",
   "alternativeExplanations": [
     {
-      "description": "alternative visual explanation 1 (non-diagnostic)",
+      "description": "2-3 words (e.g., 'allergic reaction')",
       "likelihood": "high/medium/low",
-      "reasoning": "reasoning for this explanation"
+      "reasoning": "3-5 words (e.g., 'localized redness and swelling')"
     },
     {
-      "description": "alternative visual explanation 2 (non-diagnostic)",
+      "description": "2-3 words (e.g., 'contact dermatitis')",
       "likelihood": "high/medium/low",
-      "reasoning": "reasoning for this explanation"
+      "reasoning": "3-5 words (e.g., 'absence of vesicles or scaling')"
     }
   ],
   "careConsiderations": {
-    "self_care": "very general, non-personalized self-care ideas if appropriate (e.g. keep area clean, avoid friction). Do NOT mention specific drugs, dosages, or instructions.",
-    "monitoring": "what visual changes to pay attention to (e.g. increasing redness, swelling, discharge).",
-    "when_to_seek_care": "high-level guidance on when to contact a healthcare professional (e.g. if symptoms worsen or do not improve)."
+    "self_care": "keep clean and dry",
+    "monitoring": "watch for increased redness or swelling",
+    "when_to_seek_care": "if symptoms worsen or persist beyond a few days"
   }
 }
 
-Important:
-- Do NOT provide a medical diagnosis.
-- Do NOT mention specific prescription medications or dosing.
-- Do NOT give individualized medical instructions.
-- Return ONLY JSON, no extra text.`
+IMPORTANT: Keep responses EXTREMELY brief. Use as few words as possible.`
             },
             {
               type: "image_url",
