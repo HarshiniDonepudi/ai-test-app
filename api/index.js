@@ -128,6 +128,41 @@ app.post('/api/analyze/base64', async (req, res) => {
 });
 
 async function analyzeWound(imageUrl) {
+  const prompt = `You are an expert medical AI assistant specializing in wound analysis. Analyze this wound image and provide a detailed assessment in the following JSON format:
+
+{
+  "primary_diagnosis": {
+    "location": "Specific anatomical location of the wound",
+    "etiology": "Most likely cause/type of wound (e.g., pressure ulcer, diabetic ulcer, surgical wound, burn, laceration, etc.)",
+    "severity": "Severity level (Mild/Moderate/Severe/Critical) with brief justification",
+    "confidence": "Confidence level as percentage (e.g., 85)"
+  },
+  "alternative_diagnoses": [
+    {
+      "location": "Alternative anatomical location if applicable",
+      "etiology": "Alternative wound type/cause",
+      "severity": "Alternative severity assessment",
+      "confidence": "Confidence percentage",
+      "reasoning": "Why this is an alternative possibility"
+    }
+  ],
+  "wound_characteristics": {
+    "size_estimate": "Estimated dimensions",
+    "depth": "Superficial/Partial-thickness/Full-thickness",
+    "appearance": "Color, exudate, tissue type visible",
+    "surrounding_tissue": "Condition of peri-wound area"
+  },
+  "treatment_recommendations": {
+    "immediate_care": "Immediate treatment steps",
+    "wound_care": "Specific wound care protocol",
+    "medications": "Suggested medications if applicable",
+    "monitoring": "What to monitor",
+    "referral": "When to seek specialist care"
+  }
+}
+
+Provide at least 2-3 alternative diagnoses ranked by likelihood. Be specific, clinical, and evidence-based in your assessment.`;
+
   let response;
   try {
     console.log('Calling OpenAI API with model: gpt-5.1');
@@ -137,45 +172,9 @@ async function analyzeWound(imageUrl) {
       response_format: { type: "json_object" },
       messages: [
         {
-          role: "system",
-          content:
-            "You provide brief, simple observations about images. Use minimal words. " +
-            "Keep everything concise - 1-3 words for most fields. " +
-            "Always return valid JSON only."
-        },
-        {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: `Describe what you see. Return ONLY valid JSON:
-
-{
-  "location": "single word (e.g., 'forearm', 'hand', 'leg')",
-  "primaryObservation": "2-3 words max (e.g., 'insect bite', 'skin rash', 'minor scrape')",
-  "severity": "mild/moderate/severe",
-  "confidence": "high/medium/low",
-  "alternativeExplanations": [
-    {
-      "description": "2-3 words (e.g., 'allergic reaction')",
-      "likelihood": "high/medium/low",
-      "reasoning": "3-5 words (e.g., 'localized redness and swelling')"
-    },
-    {
-      "description": "2-3 words (e.g., 'contact dermatitis')",
-      "likelihood": "high/medium/low",
-      "reasoning": "3-5 words (e.g., 'absence of vesicles or scaling')"
-    }
-  ],
-  "careConsiderations": {
-    "self_care": "keep clean and dry",
-    "monitoring": "watch for increased redness or swelling",
-    "when_to_seek_care": "if symptoms worsen or persist beyond a few days"
-  }
-}
-
-IMPORTANT: Keep responses EXTREMELY brief. Use as few words as possible.`
-            },
+            { type: "text", text: prompt },
             {
               type: "image_url",
               image_url: {
@@ -239,21 +238,21 @@ IMPORTANT: Keep responses EXTREMELY brief. Use as few words as possible.`
 
   // Map new schema to old schema for frontend compatibility
   const mappedAnalysis = {
-    location: analysis.location,
-    etiology: analysis.primaryObservation || analysis.etiology,
-    severity: analysis.severity,
-    confidence: analysis.confidence,
-    alternativeDiagnoses: (analysis.alternativeExplanations || analysis.alternativeDiagnoses || []).map(alt => ({
-      etiology: alt.description || alt.etiology,
-      likelihood: alt.likelihood,
+    location: analysis.primary_diagnosis?.location || analysis.location || '',
+    etiology: analysis.primary_diagnosis?.etiology || analysis.etiology || '',
+    severity: analysis.primary_diagnosis?.severity || analysis.severity || '',
+    confidence: analysis.primary_diagnosis?.confidence || analysis.confidence || '',
+    alternativeDiagnoses: (analysis.alternative_diagnoses || analysis.alternativeDiagnoses || []).map(alt => ({
+      etiology: alt.etiology,
+      likelihood: alt.confidence || alt.likelihood,
       reasoning: alt.reasoning
     })),
     treatment: {
-      wound_care: analysis.careConsiderations?.self_care || analysis.treatment?.wound_care || '',
-      dressing: analysis.treatment?.dressing || 'Keep area covered as needed',
-      medications: analysis.treatment?.medications || 'Consult healthcare provider for recommendations',
-      monitoring: analysis.careConsiderations?.monitoring || analysis.treatment?.monitoring || '',
-      referral: analysis.careConsiderations?.when_to_seek_care || analysis.treatment?.referral || ''
+      wound_care: analysis.treatment_recommendations?.wound_care || analysis.treatment?.wound_care || '',
+      dressing: analysis.treatment_recommendations?.immediate_care || analysis.treatment?.dressing || 'Keep area covered as needed',
+      medications: analysis.treatment_recommendations?.medications || analysis.treatment?.medications || 'Consult healthcare provider for recommendations',
+      monitoring: analysis.treatment_recommendations?.monitoring || analysis.treatment?.monitoring || '',
+      referral: analysis.treatment_recommendations?.referral || analysis.treatment?.referral || ''
     }
   };
 
