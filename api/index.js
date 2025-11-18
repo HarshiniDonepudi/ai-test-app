@@ -128,40 +128,31 @@ app.post('/api/analyze/base64', async (req, res) => {
 });
 
 async function analyzeWound(imageUrl) {
-  const prompt = `You are an expert medical AI assistant specializing in wound analysis. Analyze this wound image and provide a detailed assessment in the following JSON format:
+  const prompt = `Analyze this wound image and provide a brief assessment in JSON format:
 
 {
   "primary_diagnosis": {
-    "location": "Specific anatomical location of the wound",
-    "etiology": "Most likely cause/type of wound (e.g., pressure ulcer, diabetic ulcer, surgical wound, burn, laceration, etc.)",
-    "severity": "Severity level (Mild/Moderate/Severe/Critical) with brief justification",
-    "confidence": "Confidence level as percentage (e.g., 85)"
+    "location": "body area (brief, e.g., 'forearm', 'foot')",
+    "etiology": "likely cause of wound (2-4 words, e.g., 'insect bite', 'diabetic ulcer')",
+    "severity": "mild/moderate/severe",
+    "confidence": "high/medium/low"
   },
   "alternative_diagnoses": [
     {
-      "location": "Alternative anatomical location if applicable",
-      "etiology": "Alternative wound type/cause",
-      "severity": "Alternative severity assessment",
-      "confidence": "Confidence percentage",
-      "reasoning": "Why this is an alternative possibility"
+      "etiology": "alternative cause (2-4 words)",
+      "confidence": "high/medium/low",
+      "reasoning": "brief reason (1 sentence max)"
     }
   ],
-  "wound_characteristics": {
-    "size_estimate": "Estimated dimensions",
-    "depth": "Superficial/Partial-thickness/Full-thickness",
-    "appearance": "Color, exudate, tissue type visible",
-    "surrounding_tissue": "Condition of peri-wound area"
-  },
   "treatment_recommendations": {
-    "immediate_care": "Immediate treatment steps",
-    "wound_care": "Specific wound care protocol",
-    "medications": "Suggested medications if applicable",
-    "monitoring": "What to monitor",
-    "referral": "When to seek specialist care"
+    "wound_care": "brief care steps (2-3 sentences max)",
+    "medications": "suggested meds if needed (1-2 sentences)",
+    "monitoring": "what to watch for (1 sentence)",
+    "referral": "when to see doctor (1 sentence)"
   }
 }
 
-Provide at least 2-3 alternative diagnoses ranked by likelihood. Be specific, clinical, and evidence-based in your assessment.`;
+Keep all responses brief and concise. Provide 2-3 alternative diagnoses.`;
 
   let response;
   try {
